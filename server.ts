@@ -643,6 +643,19 @@ app.get("/api/transactions", (req, res) => {
 
 // --- VITE DEV / PRODUCTION MIDDLEWARE ---
 async function startServer() {
+  // Subdomain & Path-based application rewrite middleware
+  app.use((req, res, next) => {
+    const host = req.headers.host || "";
+    const isHostAdmin = host.toLowerCase().startsWith("admin.");
+    const isPathAdmin = req.url.startsWith("/admin") || req.url === "/admin";
+
+    // If it's an admin request (by host or path), rewrite non-api and non-asset requests to /admin.html
+    if ((isHostAdmin || isPathAdmin) && !req.url.startsWith("/api") && !req.url.includes(".")) {
+      req.url = "/admin.html";
+    }
+    next();
+  });
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -653,7 +666,13 @@ async function startServer() {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      // If the host is admin, fallback to admin.html, otherwise index.html
+      const host = req.headers.host || "";
+      if (host.toLowerCase().startsWith("admin.")) {
+        res.sendFile(path.join(distPath, "admin.html"));
+      } else {
+        res.sendFile(path.join(distPath, "index.html"));
+      }
     });
   }
 

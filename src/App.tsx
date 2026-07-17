@@ -21,7 +21,6 @@ import SvgStudio from "./components/SvgStudio";
 import FileConverter from "./components/FileConverter";
 import TemplatesLibrary from "./components/TemplatesLibrary";
 import WalletView from "./components/WalletView";
-import AdminPanel from "./components/AdminPanel";
 import ProfileCompletionModal from "./components/ProfileCompletionModal";
 import { BRAND_ASSETS } from "./assets";
 import { logoutUser } from "./lib/firebase";
@@ -398,19 +397,7 @@ export default function App() {
                 {sidebarOpen && <span>{text.wallet}</span>}
               </button>
 
-              {user.role === "admin" && (
-                <button
-                  onClick={() => { setCurrentTab(AIModule.ADMIN); if (window.innerWidth < 768) setSidebarOpen(false); }}
-                  className={`w-full py-2 px-3 rounded-xl text-left text-xs font-semibold flex items-center gap-3 transition cursor-pointer ${
-                    currentTab === AIModule.ADMIN
-                      ? "bg-yellow-600/10 border border-yellow-500/30 text-yellow-400"
-                      : "text-white/60 hover:text-white border border-transparent hover:bg-white/5"
-                  }`}
-                >
-                  <ShieldCheck className="w-4 h-4 text-yellow-500" />
-                  {sidebarOpen && <span>{text.adminPanel}</span>}
-                </button>
-              )}
+
             </div>
           </div>
 
@@ -547,10 +534,7 @@ export default function App() {
               <motion.div key="wallet" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <WalletView user={user} onBuyCredits={handleBuyCredits} transactions={transactions} />
               </motion.div>
-            ) : currentTab === AIModule.ADMIN ? (
-              <motion.div key="admin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <AdminPanel onUpdateConfig={handleUpdateConfig} />
-              </motion.div>
+
             ) : null}
           </AnimatePresence>
         </main>

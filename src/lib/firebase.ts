@@ -6,12 +6,14 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { 
   getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
-  signOut, signInWithPopup, GoogleAuthProvider, User as FirebaseUser
+  signOut, signInWithPopup, GoogleAuthProvider, User as FirebaseUser,
+  sendEmailVerification
 } from "firebase/auth";
 import { 
   getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
   getDocs, addDoc, query, orderBy, limit 
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { BRAND_ASSETS } from "../assets";
 
 // --- Configuration Keys ---
@@ -26,17 +28,19 @@ const firebaseConfig = {
 };
 
 // Check if we have valid-looking credentials to initialize a live Firebase App
-const isFirebaseConfigured = firebaseConfig.apiKey && firebaseConfig.projectId;
+export const isFirebaseConfigured = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
 
 let app;
-let auth: any = null;
-let db: any = null;
+export let auth: any = null;
+export let db: any = null;
+export let storage: any = null;
 
 if (isFirebaseConfigured) {
   try {
     app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
+    storage = getStorage(app);
     console.log("🔥 Firebase initialized successfully in live production mode.");
   } catch (err) {
     console.warn("⚠️ Failed to initialize live Firebase, falling back to secure Local Sandbox:", err);
