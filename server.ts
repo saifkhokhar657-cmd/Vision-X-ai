@@ -646,21 +646,74 @@ app.get("/api/transactions", (req, res) => {
 
 // --- VITE DEV / PRODUCTION MIDDLEWARE ---
 async function startServer() {
+  // Helper to robustly detect if a request is for the admin portal
+  function isRequestAdmin(req: express.Request): boolean {
+    const hostHeader = (req.headers.host || "").toLowerCase();
+    const xForwardedHost = (req.headers["x-forwarded-host"] as string || "").toLowerCase();
+    const xOriginalHost = (req.headers["x-original-host"] as string || "").toLowerCase();
+    const referer = (req.headers.referer || "").toLowerCase();
+    const hostname = (req.hostname || "").toLowerCase();
+    const headersStr = JSON.stringify(req.headers).toLowerCase();
+
+    // Determine if requesting the admin subdomain
+    const isSubdomainAdmin = 
+      hostHeader.startsWith("admin.") ||
+      xForwardedHost.startsWith("admin.") ||
+      xOriginalHost.startsWith("admin.") ||
+      hostname.startsWith("admin.") ||
+      referer.includes("://admin.") ||
+      headersStr.includes("admin.vision-x.soulverseapps.com");
+
+    if (isSubdomainAdmin) {
+      return true;
+    }
+
+    // In local/dev preview environments (not the live production public domain), allow path-based access
+    const isProductionPublicDomain = 
+      hostHeader.includes("vision-x.soulverseapps.com") ||
+      xForwardedHost.includes("vision-x.soulverseapps.com") ||
+      xOriginalHost.includes("vision-x.soulverseapps.com") ||
+      hostname.includes("vision-x.soulverseapps.com") ||
+      headersStr.includes("vision-x.soulverseapps.com");
+
+    const isPathAdmin = req.url.startsWith("/admin") || req.url === "/admin" || req.url === "/admin.html";
+    if (isPathAdmin && !isProductionPublicDomain) {
+      return true;
+    }
+
+    return false;
+  }
+
   // Subdomain & Path-based application rewrite middleware
   app.use((req, res, next) => {
-    // Read the Host/X-Forwarded-Host accurately
-    const host = (req.headers["x-forwarded-host"] as string || req.headers.host || "").toLowerCase();
-    const isHostAdmin = host.startsWith("admin.");
+    const isImgOrStaticAsset = req.url.includes(".") && !req.url.endsWith(".html");
+    if (isImgOrStaticAsset) {
+      return next();
+    }
+
+    const hostHeader = (req.headers.host || "").toLowerCase();
+    const xForwardedHost = (req.headers["x-forwarded-host"] as string || "").toLowerCase();
+    const xOriginalHost = (req.headers["x-original-host"] as string || "").toLowerCase();
+    const hostname = (req.hostname || "").toLowerCase();
+    const headersStr = JSON.stringify(req.headers).toLowerCase();
+
+    const isProductionPublicDomain = 
+      hostHeader.includes("vision-x.soulverseapps.com") ||
+      xForwardedHost.includes("vision-x.soulverseapps.com") ||
+      xOriginalHost.includes("vision-x.soulverseapps.com") ||
+      hostname.includes("vision-x.soulverseapps.com") ||
+      headersStr.includes("vision-x.soulverseapps.com");
+
     const isPathAdmin = req.url.startsWith("/admin") || req.url === "/admin";
 
-    if (isHostAdmin) {
-      // On admin subdomain, route root, index.html, or generic spa routes to admin.html
+    if (isRequestAdmin(req)) {
+      // Route root, index.html, or generic spa routes to admin.html
       if (req.url === "/" || req.url === "/index.html" || (!req.url.startsWith("/api") && !req.url.includes("."))) {
         req.url = "/admin.html";
       }
     } else {
-      // On public domain, redirect any administration path or direct admin.html access to the live admin subdomain
-      if (isPathAdmin || req.url === "/admin.html") {
+      // On production public domain, redirect any administration path or direct admin.html access to the live admin subdomain
+      if (isProductionPublicDomain && (isPathAdmin || req.url === "/admin.html")) {
         return res.redirect("https://admin.vision-x.soulverseapps.com");
       }
     }
@@ -678,8 +731,7 @@ async function startServer() {
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
       // Fallback routing
-      const host = (req.headers["x-forwarded-host"] as string || req.headers.host || "").toLowerCase();
-      if (host.startsWith("admin.")) {
+      if (isRequestAdmin(req)) {
         res.sendFile(path.join(distPath, "admin.html"));
       } else {
         res.sendFile(path.join(distPath, "index.html"));
