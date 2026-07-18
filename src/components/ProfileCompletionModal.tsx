@@ -12,6 +12,7 @@ import {
 import { User } from "../types";
 import { BRAND_ASSETS } from "../assets";
 import { updateUserProfileInFirebase } from "../lib/firebase";
+import ProfilePictureUploader from "./ProfilePictureUploader";
 
 interface ProfileCompletionModalProps {
   user: User;
@@ -157,31 +158,13 @@ export default function ProfileCompletionModal({ user, onCompleted }: ProfileCom
         {step === 1 && (
           <div className="space-y-5">
             {/* Interactive Profile Photo Selection */}
-            <div className="flex flex-col items-center gap-3">
-              <label className="block text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest">Select Profile Node Avatar</label>
-              <div className="relative">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden border border-white/10 p-0.5 bg-gradient-to-tr from-blue-500 to-purple-500 shadow-xl">
-                  <img src={avatarUrl} alt="Preview Avatar" className="w-full h-full object-cover rounded-xl" referrerPolicy="no-referrer" />
-                </div>
-                <div className="absolute -bottom-1.5 -right-1.5 p-1.5 bg-[#0e121e] border border-white/10 rounded-lg text-white/60">
-                  <Camera className="w-3.5 h-3.5 text-blue-400" />
-                </div>
-              </div>
-              
-              {/* Mini gallery */}
-              <div className="flex gap-2.5 mt-1.5">
-                {SAMPLE_AVATARS.map((url, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setAvatarUrl(url)}
-                    className={`w-10 h-10 rounded-xl overflow-hidden border transition ${
-                      avatarUrl === url ? "border-blue-500 scale-105" : "border-white/5 hover:border-white/10"
-                    }`}
-                  >
-                    <img src={url} alt={`Sample ${i}`} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-col items-center gap-2">
+              <label className="block text-[10px] font-mono font-bold text-white/40 uppercase tracking-widest mb-1">Set Profile Node Avatar</label>
+              <ProfilePictureUploader
+                userId={user.id}
+                currentAvatarUrl={avatarUrl}
+                onSaved={(newUrl) => setAvatarUrl(newUrl)}
+              />
             </div>
 
             {/* First Name & Last Name */}

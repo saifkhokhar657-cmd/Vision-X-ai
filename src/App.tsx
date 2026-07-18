@@ -22,6 +22,7 @@ import FileConverter from "./components/FileConverter";
 import TemplatesLibrary from "./components/TemplatesLibrary";
 import WalletView from "./components/WalletView";
 import ProfileCompletionModal from "./components/ProfileCompletionModal";
+import AccountSettings from "./components/AccountSettings";
 import { BRAND_ASSETS } from "./assets";
 import { logoutUser } from "./lib/firebase";
 
@@ -41,7 +42,7 @@ export default function App() {
     return null;
   });
   const [language, setLanguage] = useState<LanguageCode>("en");
-  const [currentTab, setCurrentTab] = useState<AIModule | "dashboard">("dashboard");
+  const [currentTab, setCurrentTab] = useState<AIModule | "dashboard" | "settings">("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -322,17 +323,23 @@ export default function App() {
 
           {/* User Account avatar & actions */}
           <div className="flex items-center gap-2.5">
-            {user.avatarUrl ? (
-              <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full border border-blue-500/30 object-cover" />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-blue-600/10 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-xs uppercase">
-                {user.name.charAt(0)}
+            <button 
+              onClick={() => setCurrentTab("settings")}
+              className="flex items-center gap-2.5 text-left group hover:opacity-85 transition cursor-pointer"
+              title="View Profile Settings"
+            >
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-8 h-8 rounded-full border border-blue-500/30 object-cover group-hover:border-blue-400/60 transition" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-blue-600/10 text-blue-400 border border-blue-500/30 flex items-center justify-center font-bold text-xs uppercase group-hover:border-blue-400/60 transition">
+                  {user.name.charAt(0)}
+                </div>
+              )}
+              <div className="hidden lg:block text-left">
+                <p className="text-xs font-semibold text-white group-hover:text-blue-400 transition truncate max-w-[100px]">{user.name}</p>
+                <span className="text-[9px] font-mono text-purple-400 uppercase tracking-widest">{user.plan}</span>
               </div>
-            )}
-            <div className="hidden lg:block text-left">
-              <p className="text-xs font-semibold text-white truncate max-w-[100px]">{user.name}</p>
-              <span className="text-[9px] font-mono text-purple-400 uppercase tracking-widest">{user.plan}</span>
-            </div>
+            </button>
             <button
               onClick={handleLogout}
               className="p-2 hover:bg-red-950/20 hover:text-red-400 rounded-xl border border-transparent transition text-white/60 cursor-pointer"
@@ -384,7 +391,7 @@ export default function App() {
             </div>
 
             <div className="space-y-1.5">
-              <span className="text-[9px] font-mono font-bold text-white/40 uppercase tracking-widest px-3">System Billing</span>
+              <span className="text-[9px] font-mono font-bold text-white/40 uppercase tracking-widest px-3">Ecosystem & Settings</span>
               <button
                 onClick={() => { setCurrentTab(AIModule.WALLET); if (window.innerWidth < 768) setSidebarOpen(false); }}
                 className={`w-full py-2 px-3 rounded-xl text-left text-xs font-semibold flex items-center gap-3 transition cursor-pointer ${
@@ -397,7 +404,17 @@ export default function App() {
                 {sidebarOpen && <span>{text.wallet}</span>}
               </button>
 
-
+              <button
+                onClick={() => { setCurrentTab("settings"); if (window.innerWidth < 768) setSidebarOpen(false); }}
+                className={`w-full py-2 px-3 rounded-xl text-left text-xs font-semibold flex items-center gap-3 transition cursor-pointer ${
+                  currentTab === "settings"
+                    ? "bg-blue-600/10 border border-blue-500/30 text-blue-400"
+                    : "text-white/60 hover:text-white border border-transparent hover:bg-white/5"
+                }`}
+              >
+                <Settings2 className="w-4 h-4" />
+                {sidebarOpen && <span>Account Settings</span>}
+              </button>
             </div>
           </div>
 
@@ -534,7 +551,10 @@ export default function App() {
               <motion.div key="wallet" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <WalletView user={user} onBuyCredits={handleBuyCredits} transactions={transactions} />
               </motion.div>
-
+            ) : currentTab === "settings" ? (
+              <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <AccountSettings user={user} onUserUpdate={(updated) => setUser(updated)} />
+              </motion.div>
             ) : null}
           </AnimatePresence>
         </main>
@@ -547,7 +567,7 @@ export default function App() {
           { tab: AIModule.IMAGE, label: "Image", icon: <ImageIcon className="w-5 h-5" /> },
           { tab: AIModule.ANIMATION, label: "Motion", icon: <Video className="w-5 h-5" /> },
           { tab: AIModule.SVG, label: "Vectors", icon: <Code className="w-5 h-5" /> },
-          { tab: AIModule.WALLET, label: "Wallet", icon: <Wallet className="w-5 h-5" /> }
+          { tab: "settings", label: "Settings", icon: <Settings2 className="w-5 h-5" /> }
         ].map((item) => (
           <button
             key={item.tab}

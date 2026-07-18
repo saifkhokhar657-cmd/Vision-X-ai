@@ -279,6 +279,30 @@ export async function loginWithGoogle() {
   }
 }
 
+export async function uploadProfilePictureToFirebase(userId: string, imageBlob: Blob): Promise<string> {
+  if (isFirebaseConfigured && storage) {
+    try {
+      const storageRef = ref(storage, `users/${userId}/profile_pic.jpg`);
+      const snapshot = await uploadBytes(storageRef, imageBlob, {
+        contentType: "image/jpeg",
+      });
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      return downloadUrl;
+    } catch (err: any) {
+      console.error("Firebase Storage upload failed, performing local fallback:", err);
+    }
+  }
+
+  // Local Sandbox Fallback: Convert Blob to base64 data URL
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+    reader.readAsDataURL(imageBlob);
+  });
+}
+
 export async function updateUserProfileInFirebase(userId: string, data: any) {
   if (auth && db) {
     try {
